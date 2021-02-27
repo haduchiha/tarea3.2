@@ -1,0 +1,52 @@
+IF OBJECT_ID('InsertarCurso', 'P') IS NOT NULL
+  DROP PROCEDURE InsertarCurso;
+GO
+
+CREATE PROCEDURE InsertarCurso(
+							 @P_Curso_id INTEGER,
+                             @P_Nombre_Curso VARCHAR(150),
+                             @P_Horario VARCHAR(20),
+                             @P_Facultad_id INTEGER,
+                             @P_Salon_id VARCHAR(10)
+                             )
+as
+DECLARE @Validacion VARCHAR(150)
+begin
+set nocount on;
+	SELECT @Validacion = COUNT(*) FROM curso WHERE NOMBRE_CURSO = @P_Nombre_Curso
+	--print 'Validacion antes del try: ' + @Validacion;
+BEGIN TRY
+    BEGIN TRANSACTION
+			  print 'En el begin tran: ' + @Validacion;
+			  if (@Validacion = 0) 
+			  begin
+				  INSERT INTO curso VALUES (@P_Curso_id, @P_Nombre_Curso, @P_Horario, @P_Facultad_id, @P_Salon_id);
+				  print 'CURSO INSERTADO'; 
+			  end
+			  else begin
+				  INSERT INTO curso VALUES (@P_Curso_id, @P_Nombre_Curso, @P_Horario, @P_Facultad_id, @P_Salon_id);
+				  print 'Dentro de else begin: ' + @Validacion;
+				  DECLARE @Calculo INT;
+					SET @Calculo = @Validacion/0;
+					print 'Valor de calculo: ' + @Calculo;
+			  end
+     COMMIT TRAN
+END TRY
+BEGIN CATCH
+	print 'en el catch 1 ' + @Validacion;
+    IF @Validacion > 0
+	print 'en el catch 2 ' + @Validacion;
+	print 'CURSO YA EXISTE';
+        ROLLBACK TRAN
+DECLARE @ErrorMessage NVARCHAR(4000);
+DECLARE @ErrorSeverity INT;
+DECLARE @ErrorState INT; 
+SELECT     @ErrorMessage = ERROR_MESSAGE(),
+    @ErrorSeverity = ERROR_SEVERITY(),
+    @ErrorState = ERROR_STATE(); 
+RAISERROR (@ErrorMessage, 
+           @ErrorSeverity, 
+           @ErrorState 
+           ); 
+END CATCH
+END
